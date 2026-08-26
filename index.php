@@ -7,6 +7,7 @@
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/database.php';
 
+// Ensure DB is initialized
 init_database();
 $db = get_db_connection();
 
@@ -28,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $existing = $checkStmt->fetch();
 
             if ($existing) {
-                // Product already exists: Increase existing stock quantity & update price/timestamp
+                // Product already exists: Increase existing stock quantity & update price
                 $newPrice = ($price > 0) ? $price : floatval($existing['price']);
                 $updateStmt = $db->prepare("UPDATE products SET stock_quantity = stock_quantity + :added_stock, price = :price, updated_at = CURRENT_TIMESTAMP WHERE id = :id");
                 $updateStmt->execute([
@@ -111,6 +112,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Location: index.php?msg=reset');
         exit;
     }
+
+    // Default POST fallback redirect
+    header('Location: index.php');
+    exit;
 }
 
 // Fetch all products from MySQL database
