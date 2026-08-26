@@ -1,51 +1,22 @@
-# Inventory Management System (PHP & MySQL)
+# Inventory Management System
 
-A simple, beginner-friendly **Inventory Management System** for managing products, tracking stock levels, searching/filtering inventory, and identifying low-stock and out-of-stock items.
+A beginner-friendly, full-featured **Inventory Management System** built using **only**:
+- **HTML5** (`index.html`)
+- **CSS3** (`css/styles.css` with warm beige theme)
+- **Vanilla JavaScript** (`js/app.js` with `localStorage`, `Map`, and `Array` data structures)
 
-Built using **procedural PHP**, **MySQL (PDO)**, **HTML5**, **CSS** (warm beige theme), and **basic Vanilla JavaScript** (procedural functions, DOM arrays, objects, no JSON, no ES6 classes).
-
----
-
-## 📋 Database (SQL)
-
-Run the following raw SQL statements in **phpMyAdmin** or **MySQL CLI** to create the `products` table and insert sample data:
-
-```sql
--- 1. Create Products Table
-CREATE TABLE IF NOT EXISTS products (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    price DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
-    stock_quantity INT NOT NULL DEFAULT 0,
-    category VARCHAR(100) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
-
--- 2. Insert Initial Sample Products (in Indian Rupees ₹)
-INSERT INTO products (name, description, price, stock_quantity, category) VALUES
-('Wireless Bluetooth Headphones', 'Over-ear headphones with deep bass and 20-hour battery backup.', 2499.00, 15, 'Electronics'),
-('RGB Mechanical Gaming Keyboard', 'Tactile switches with customizable rainbow LED backlighting.', 3499.00, 3, 'Electronics'),
-('Full HD Monitor 24 inch', '1080p IPS display monitor for office and gaming.', 8999.00, 0, 'Electronics'),
-('Cotton Polo T-Shirt', 'Breathable 100% pure cotton regular fit t-shirt.', 799.00, 25, 'Apparel'),
-('Electric Coffee Maker Machine', 'Automatic drip coffee brewer with keep-warm plate.', 1850.00, 2, 'Home & Kitchen'),
-('Complete Web Development Book', 'Beginner guide to HTML, CSS, JavaScript, PHP and SQL databases.', 450.00, 0, 'Books'),
-('Organic Roasted Coffee Beans 500g', 'Fresh roasted arabica coffee beans.', 599.00, 40, 'Groceries');
-```
+> 💡 **Zero Backend Required!** Simply open `index.html` in any web browser to run the application locally.
 
 ---
 
-## 🎨 Design & Features
+## 🎨 Theme & Features
 
-- **Beige Palette**: Warm beige color theme (`#f7f3ed` background, `#ebe3d5` header, `#8c6d46` accents, `#ffffff` card containers).
-- **Rupee Currency (₹)**: All prices and inventory valuation metrics formatted in Indian Rupees (₹).
+- **Warm Beige Palette**: Styled with `#f7f3ed` page background, `#ebe3d5` header, `#8c6d46` warm brown buttons, and `#ffffff` card containers.
+- **Rupee Currency (₹)**: All prices and total inventory valuation metrics are formatted in Indian Rupees (₹).
+- **LocalStorage Data Persistence**: Automatically saves your products in browser `localStorage`. Page refreshes load stored data cleanly without duplicating items!
+- **Duplicate Prevention & Stock Merging**: Adding a product with an existing name automatically merges stock (`stock_quantity += addedStock`) and updates total valuation metrics.
 - **CRUD Operations**: Add, Edit, Delete, and Update stock quantity (`+1` / `-1`).
-- **Stock Status Badges**:
-  - `In Stock` (> 5 units)
-  - `Low Stock` (1 to 5 units)
-  - `Out of Stock` (0 units)
-- **Real-Time Client-Side Filter**: Instant search by product name, category, or description using plain Vanilla JS.
+- **Real-Time Client-Side Search & Filter**: Filter products by Name, Category, or Stock Status (*All*, *In Stock*, *Low Stock*, *Out of Stock*).
 - **Dual View Modes**: Switch between **Table View** and **Grid Cards View**.
 
 ---
@@ -53,19 +24,16 @@ INSERT INTO products (name, description, price, stock_quantity, category) VALUES
 ## 📁 Project Structure
 
 ```
-├── index.php          # Main PHP server application controller & view
-├── db.php             # Procedural PDO database connection handler (MySQL / SQLite fallback)
-├── database.php       # Auto-initializer for schema setup
-├── schema.sql         # Raw MySQL database creation script
+├── index.html         # Main HTML5 web application
 ├── css/
-│   └── styles.css     # Warm beige theme styling & layout rules
+│   └── styles.css     # Warm beige styling & layout rules
 └── js/
-    └── app.js         # Basic procedural JavaScript (DOM filtering & modal handling)
+    └── app.js         # Vanilla JS application controller (LocalStorage, Map, Array)
 ```
 
 ---
 
-## 🚀 Getting Started
+## 🚀 How to Run
 
 1. Clone the repository:
    ```bash
@@ -73,23 +41,7 @@ INSERT INTO products (name, description, price, stock_quantity, category) VALUES
    cd Inventory-management
    ```
 
-2. Configure database settings in `db.php` if using MySQL:
-   ```php
-   define('DB_HOST', 'localhost');
-   define('DB_NAME', 'inventory_db');
-   define('DB_USER', 'root');
-   define('DB_PASS', '');
-   ```
-
-3. Start the PHP built-in web server:
-   ```bash
-   php -S 127.0.0.1:8000
-   ```
-
-4. Open your browser and navigate to:
-   ```
-   http://127.0.0.1:8000/index.php
-   ```
+2. Double-click `index.html` or open it in any web browser!
 
 ---
 

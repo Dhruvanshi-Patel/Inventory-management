@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Management System | HTML, CSS & Vanilla JS</title>
+    <meta name="description" content="Simple Inventory Management System built using pure HTML, CSS, and basic Vanilla JavaScript.">
+    
+    <!-- CSS & FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+    <!-- Header Bar -->
+    <header class="app-header">
+        <div class="header-container">
+            <div class="brand">
+                <div class="brand-icon">
+                    <i class="fa-solid fa-boxes-stacked"></i>
+                </div>
+                <div class="brand-text">
+                    <h1>Inventory Manager</h1>
+                    <p>Basic Stock & Product Management (HTML, CSS & JS)</p>
+                </div>
+            </div>
+
+            <div class="header-actions">
+                <button type="button" class="btn btn-secondary" id="btnResetData" title="Reset Demo Data">
+                    <i class="fa-solid fa-rotate-left"></i> Reset Data
+                </button>
+                <button type="button" class="btn btn-primary" id="btnAddProduct">
+                    <i class="fa-solid fa-plus"></i> Add Product
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="main-container">
+
+        <!-- Summary Metric Stats Cards -->
+        <section class="stats-grid">
+            <div class="stat-card" data-filter-target="all" title="Click to view all products">
+                <div class="stat-info">
+                    <h3>Total Products</h3>
+                    <div class="stat-value" id="totalProductsVal">0</div>
+                    <div class="stat-subtext">Cataloged items</div>
+                </div>
+                <div class="stat-icon-wrapper">
+                    <i class="fa-solid fa-box"></i>
+                </div>
+            </div>
+
+            <div class="stat-card" data-filter-target="all">
+                <div class="stat-info">
+                    <h3>Total Value</h3>
+                    <div class="stat-value" id="totalValueVal">₹0.00</div>
+                    <div class="stat-subtext">Total inventory worth</div>
+                </div>
+                <div class="stat-icon-wrapper">
+                    <i class="fa-solid fa-indian-rupee-sign"></i>
+                </div>
+            </div>
+
+            <div class="stat-card" data-filter-target="lowstock" title="Click to filter Low Stock">
+                <div class="stat-info">
+                    <h3>Low Stock</h3>
+                    <div class="stat-value" id="lowStockVal">0</div>
+                    <div class="stat-subtext">&le; 5 units remaining</div>
+                </div>
+                <div class="stat-icon-wrapper">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+            </div>
+
+            <div class="stat-card" data-filter-target="outofstock" title="Click to filter Out of Stock">
+                <div class="stat-info">
+                    <h3>Out of Stock</h3>
+                    <div class="stat-value" id="outOfStockVal">0</div>
+                    <div class="stat-subtext">0 units remaining</div>
+                </div>
+                <div class="stat-icon-wrapper">
+                    <i class="fa-solid fa-circle-xmark"></i>
+                </div>
+            </div>
+        </section>
+
+        <!-- Toolbar Panel (Search & Filter Controls) -->
+        <section class="toolbar-panel">
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="searchInput" class="search-input" placeholder="Search products by name, category, or description...">
+            </div>
+
+            <div class="filter-group">
+                <select id="categoryFilter" class="custom-select">
+                    <option value="all">All Categories</option>
+                </select>
+
+                <div class="status-pills">
+                    <button type="button" class="pill-btn active" data-status="all">All</button>
+                    <button type="button" class="pill-btn" data-status="instock">In Stock</button>
+                    <button type="button" class="pill-btn" data-status="lowstock">Low Stock</button>
+                    <button type="button" class="pill-btn" data-status="outofstock">Out of Stock</button>
+                </div>
+
+                <div class="view-toggle">
+                    <button type="button" class="view-btn active" data-view="table" title="Table View">
+                        <i class="fa-solid fa-list"></i>
+                    </button>
+                    <button type="button" class="view-btn" data-view="grid" title="Grid View">
+                        <i class="fa-solid fa-border-all"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Products Display Panel -->
+        <section class="inventory-panel">
+            
+            <!-- Table View -->
+            <div id="tableViewContainer" class="table-responsive">
+                <table class="product-table">
+                    <thead>
+                        <tr>
+                            <th>Product Name</th>
+                            <th>Category</th>
+                            <th>Price (₹)</th>
+                            <th>Stock Quantity</th>
+                            <th>Stock Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="productTableBody">
+                        <!-- Populated dynamically via JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Grid View -->
+            <div id="gridViewContainer" class="product-grid" style="display: none;">
+                <!-- Populated dynamically via JS -->
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <i class="fa-solid fa-box-open"></i>
+                <h3>No Products Found</h3>
+                <p>No products match your search query or filter selection.</p>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Modal Dialog: Add / Edit Product -->
+    <dialog id="productModal" class="modal">
+        <div class="modal-header">
+            <h2 id="modalTitle">Add New Product</h2>
+            <button type="button" class="modal-close">&times;</button>
+        </div>
+        <form id="productForm">
+            <input type="hidden" id="productId">
+            <div class="modal-body">
+                <div class="form-grid">
+                    <div class="form-group full-width">
+                        <label for="modalProductName">Product Name *</label>
+                        <input type="text" id="modalProductName" class="form-control" required placeholder="e.g. Ergonomic Desk Chair">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="modalCategorySelect">Category *</label>
+                        <select id="modalCategorySelect" class="form-control" required>
+                            <option value="Electronics">Electronics</option>
+                            <option value="Apparel">Apparel</option>
+                            <option value="Home & Kitchen">Home & Kitchen</option>
+                            <option value="Books">Books</option>
+                            <option value="Groceries">Groceries</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="modalPrice">Price (₹) *</label>
+                        <input type="number" step="0.01" min="0" id="modalPrice" class="form-control" required placeholder="0.00">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="modalStockQuantity">Stock Quantity *</label>
+                        <input type="number" min="0" id="modalStockQuantity" class="form-control" required placeholder="0">
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="modalDescription">Description</label>
+                        <textarea id="modalDescription" class="form-control" placeholder="Enter product details..."></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-cancel">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="btnSaveProduct">Save Product</button>
+            </div>
+        </form>
+    </dialog>
+
+    <!-- Modal Dialog: Delete Confirmation -->
+    <dialog id="deleteModal" class="modal">
+        <div class="modal-header">
+            <h2>Confirm Delete</h2>
+            <button type="button" class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p>Are you sure you want to delete <strong id="deleteProductName">this product</strong>?</p>
+            <p style="color: var(--text-muted); font-size: 13px; margin-top: 6px;">This action cannot be undone.</p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary btn-cancel">Cancel</button>
+            <button type="button" class="btn btn-danger" id="btnConfirmDelete">Delete Product</button>
+        </div>
+    </dialog>
+
+    <!-- Toast Notifications Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Application Script -->
+    <script src="js/app.js"></script>
+</body>
+</html>
