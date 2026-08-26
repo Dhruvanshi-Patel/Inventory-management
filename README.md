@@ -2,10 +2,10 @@
 
 A beginner-friendly, full-featured **Inventory Management System** built using **only**:
 - **HTML5** (`index.html`)
-- **CSS3** (`css/styles.css` with warm beige theme)
-- **Vanilla JavaScript** (`js/app.js` with `localStorage`, `Map`, and `Array` data structures)
+- **CSS3** (`styles.css` with warm beige theme)
+- **Vanilla JavaScript** (`app.js` with `localStorage`, `Map`, and `Array` data structures)
 
-> 💡 **Zero Backend Required!** Simply open `index.html` in any web browser to run the application locally.
+> 💡 **Zero Subdirectories & Zero Backend Required!** Simply open `index.html` in any web browser to run the application locally.
 
 ---
 
@@ -25,10 +25,9 @@ A beginner-friendly, full-featured **Inventory Management System** built using *
 
 ```
 ├── index.html         # Main HTML5 web application
-├── css/
-│   └── styles.css     # Warm beige styling & layout rules
-└── js/
-    └── app.js         # Vanilla JS application controller (LocalStorage, Map, Array)
+├── styles.css         # Warm beige styling & layout rules
+├── app.js             # Vanilla JS application controller (LocalStorage, Map, Array)
+└── README.md          # Project documentation
 ```
 
 ---
