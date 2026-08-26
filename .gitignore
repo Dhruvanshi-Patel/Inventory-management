@@ -1,0 +1,6 @@
+inventory.db-journal
+inventory.db-wal
+inventory.db-shm
+*.log
+.DS_Store
+node_modules/
