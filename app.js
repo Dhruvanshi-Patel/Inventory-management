@@ -1,8 +1,3 @@
-/**
- * Simple Procedural Inventory Management System
- * Pure Vanilla JavaScript (Functions, Arrays, Objects, LocalStorage)
- * Zero Frameworks, Zero ES6 Classes, Zero JSON APIs
- */
 
 document.addEventListener('DOMContentLoaded', function() {
     // LocalStorage Storage Key
