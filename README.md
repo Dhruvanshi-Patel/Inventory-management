@@ -5,14 +5,11 @@ A beginner-friendly, full-featured **Inventory Management System** built using *
 - **CSS3** (`styles.css` with warm beige theme)
 - **Vanilla JavaScript** (`app.js` with `localStorage`, `Map`, and `Array` data structures)
 
-> 💡 **Zero Subdirectories & Zero Backend Required!** Simply open `index.html` in any web browser to run the application locally.
-
 ---
 
 ## 🎨 Theme & Features
 
 - **Warm Beige Palette**: Styled with `#f7f3ed` page background, `#ebe3d5` header, `#8c6d46` warm brown buttons, and `#ffffff` card containers.
-- **Rupee Currency (₹)**: All prices and total inventory valuation metrics are formatted in Indian Rupees (₹).
 - **LocalStorage Data Persistence**: Automatically saves your products in browser `localStorage`. Page refreshes load stored data cleanly without duplicating items!
 - **Duplicate Prevention & Stock Merging**: Adding a product with an existing name automatically merges stock (`stock_quantity += addedStock`) and updates total valuation metrics.
 - **CRUD Operations**: Add, Edit, Delete, and Update stock quantity (`+1` / `-1`).
@@ -43,7 +40,3 @@ A beginner-friendly, full-featured **Inventory Management System** built using *
 2. Double-click `index.html` or open it in any web browser!
 
 ---
-
-## 📄 License
-
-This project is open-source and available under the [MIT License](LICENSE).
