@@ -22,16 +22,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $category = trim($_POST['category'] ?? '');
 
         if (!empty($name) && !empty($category)) {
-            $stmt = $db->prepare("INSERT INTO products (name, description, price, stock_quantity, category) VALUES (:name, :description, :price, :stock_quantity, :category)");
-            $stmt->execute([
-                ':name' => $name,
-                ':description' => $description,
-                ':price' => $price,
-                ':stock_quantity' => $stock_quantity,
-                ':category' => $category
-            ]);
+            // Case-insensitive check for existing product with the same name
+            $checkStmt = $db->prepare("SELECT id, stock_quantity, price FROM products WHERE LOWER(TRIM(name)) = LOWER(TRIM(:name))");
+            $checkStmt->execute([':name' => $name]);
+            $existing = $checkStmt->fetch();
+
+            if ($existing) {
+                // Product already exists: Increase existing stock quantity & update price/timestamp
+                $newPrice = ($price > 0) ? $price : floatval($existing['price']);
+                $updateStmt = $db->prepare("UPDATE products SET stock_quantity = stock_quantity + :added_stock, price = :price, updated_at = CURRENT_TIMESTAMP WHERE id = :id");
+                $updateStmt->execute([
+                    ':added_stock' => $stock_quantity,
+                    ':price' => $newPrice,
+                    ':id' => $existing['id']
+                ]);
+                header('Location: index.php?msg=stock_merged&count=' . $stock_quantity);
+                exit;
+            } else {
+                // New unique product: Insert into database
+                $stmt = $db->prepare("INSERT INTO products (name, description, price, stock_quantity, category) VALUES (:name, :description, :price, :stock_quantity, :category)");
+                $stmt->execute([
+                    ':name' => $name,
+                    ':description' => $description,
+                    ':price' => $price,
+                    ':stock_quantity' => $stock_quantity,
+                    ':category' => $category
+                ]);
+                header('Location: index.php?msg=added');
+                exit;
+            }
         }
-        header('Location: index.php?msg=added');
+        header('Location: index.php');
         exit;
     } 
     
@@ -121,10 +142,15 @@ $toastType = 'info';
 if (isset($_GET['msg'])) {
     switch ($_GET['msg']) {
         case 'added': $toastMsg = 'New product added successfully!'; $toastType = 'success'; break;
+        case 'stock_merged': 
+            $addedCount = intval($_GET['count'] ?? 0);
+            $toastMsg = "Product already exists! Added {$addedCount} units to existing stock."; 
+            $toastType = 'success'; 
+            break;
         case 'updated': $toastMsg = 'Product updated successfully!'; $toastType = 'success'; break;
         case 'stock_updated': $toastMsg = 'Stock level updated!'; $toastType = 'success'; break;
         case 'deleted': $toastMsg = 'Product deleted from inventory.'; $toastType = 'warning'; break;
-        case 'reset': $toastMsg = 'Database reset to initial sample items.'; $toastType = 'info'; break;
+        case 'reset': $toastMsg = 'Inventory reset to default sample items.'; $toastType = 'info'; break;
     }
 }
 ?>
