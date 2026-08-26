@@ -1,32 +1,52 @@
-# Inventory Management System
+# Inventory Management System (PHP & MySQL)
 
-A beginner-friendly, full-featured **Inventory Management System** for managing products, tracking stock levels, searching/filtering inventory, and identifying low-stock and out-of-stock items.
+A simple, beginner-friendly **Inventory Management System** for managing products, tracking stock levels, searching/filtering inventory, and identifying low-stock and out-of-stock items.
 
-Built using **PHP**, **SQL (SQLite/PDO)**, **HTML5**, **CSS** (warm beige color theme), and **JavaScript** (using native `Map` and `Array` data structures).
-
-> 💡 **Note**: Built completely without JSON or CSV export dependencies! Uses standard HTML Form POST submissions and PDO SQL queries.
+Built using **procedural PHP**, **MySQL (PDO)**, **HTML5**, **CSS** (warm beige theme), and **basic Vanilla JavaScript** (procedural functions, DOM arrays, objects, no JSON, no ES6 classes).
 
 ---
 
-## 🎨 Theme & Aesthetics
+## 📋 Database (SQL)
 
-- **Beige Color Palette**: Designed with a clean, warm beige theme (`#f7f3ed` page background, `#ebe3d5` header, `#8c6d46` warm brown accents, `#ffffff` card containers).
-- **Rupee Currency (₹)**: All product prices and inventory valuation metrics are formatted in Indian Rupees (₹).
+Run the following raw SQL statements in **phpMyAdmin** or **MySQL CLI** to create the `products` table and insert sample data:
+
+```sql
+-- 1. Create Products Table
+CREATE TABLE IF NOT EXISTS products (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    price DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    stock_quantity INT NOT NULL DEFAULT 0,
+    category VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- 2. Insert Initial Sample Products (in Indian Rupees ₹)
+INSERT INTO products (name, description, price, stock_quantity, category) VALUES
+('Wireless Bluetooth Headphones', 'Over-ear headphones with deep bass and 20-hour battery backup.', 2499.00, 15, 'Electronics'),
+('RGB Mechanical Gaming Keyboard', 'Tactile switches with customizable rainbow LED backlighting.', 3499.00, 3, 'Electronics'),
+('Full HD Monitor 24 inch', '1080p IPS display monitor for office and gaming.', 8999.00, 0, 'Electronics'),
+('Cotton Polo T-Shirt', 'Breathable 100% pure cotton regular fit t-shirt.', 799.00, 25, 'Apparel'),
+('Electric Coffee Maker Machine', 'Automatic drip coffee brewer with keep-warm plate.', 1850.00, 2, 'Home & Kitchen'),
+('Complete Web Development Book', 'Beginner guide to HTML, CSS, JavaScript, PHP and SQL databases.', 450.00, 0, 'Books'),
+('Organic Roasted Coffee Beans 500g', 'Fresh roasted arabica coffee beans.', 599.00, 40, 'Groceries');
+```
 
 ---
 
-## ✨ Features
+## 🎨 Design & Features
 
-- 📦 **Product Details**: Product Name, Category, Price (₹), Stock Quantity, SKU Code, Description, and Stock Status.
-- ➕ **CRUD Operations**: Add new products, edit existing items, delete with confirmation modal.
-- 📊 **Dashboard Metrics**:
-  - Total Products Cataloged
-  - Total Inventory Valuation (₹)
-  - Low Stock Counter ($\le$ 5 units)
-  - Out of Stock Counter ($= 0$ units)
-- 🔍 **Real-Time Client-Side Search & Filtering**: Fast DOM search by Product Name, SKU, Category, or Description; Category filter dropdown; Stock status filter pills (*All*, *In Stock*, *Low Stock*, *Out of Stock*).
-- ⚡ **Stock Adjustments**: Quick `+1` / `-1` stock form buttons and exact stock quantity adjustment.
-- 👁️ **Dual View Modes**: Switch between detailed **Table View** and **Grid Cards View**.
+- **Beige Palette**: Warm beige color theme (`#f7f3ed` background, `#ebe3d5` header, `#8c6d46` accents, `#ffffff` card containers).
+- **Rupee Currency (₹)**: All prices and inventory valuation metrics formatted in Indian Rupees (₹).
+- **CRUD Operations**: Add, Edit, Delete, and Update stock quantity (`+1` / `-1`).
+- **Stock Status Badges**:
+  - `In Stock` (> 5 units)
+  - `Low Stock` (1 to 5 units)
+  - `Out of Stock` (0 units)
+- **Real-Time Client-Side Filter**: Instant search by product name, category, or description using plain Vanilla JS.
+- **Dual View Modes**: Switch between **Table View** and **Grid Cards View**.
 
 ---
 
@@ -34,14 +54,13 @@ Built using **PHP**, **SQL (SQLite/PDO)**, **HTML5**, **CSS** (warm beige color 
 
 ```
 ├── index.php          # Main PHP server application controller & view
-├── config.php         # PDO Database connection configuration (SQLite / MySQL)
-├── database.php       # Database auto-initializer & seeder script
-├── schema.sql         # SQL database schema DDL & initial product seed data
-├── inventory.db       # SQLite database file
+├── db.php             # Procedural PDO database connection handler (MySQL / SQLite fallback)
+├── database.php       # Auto-initializer for schema setup
+├── schema.sql         # Raw MySQL database creation script
 ├── css/
-│   └── styles.css     # Beige theme styling and responsive layout rules
+│   └── styles.css     # Warm beige theme styling & layout rules
 └── js/
-    └── app.js         # Client-side DOM filtering & modal controller (Map/Array)
+    └── app.js         # Basic procedural JavaScript (DOM filtering & modal handling)
 ```
 
 ---
@@ -54,24 +73,23 @@ Built using **PHP**, **SQL (SQLite/PDO)**, **HTML5**, **CSS** (warm beige color 
    cd Inventory-management
    ```
 
-2. Start the PHP development server:
+2. Configure database settings in `db.php` if using MySQL:
+   ```php
+   define('DB_HOST', 'localhost');
+   define('DB_NAME', 'inventory_db');
+   define('DB_USER', 'root');
+   define('DB_PASS', '');
+   ```
+
+3. Start the PHP built-in web server:
    ```bash
    php -S 127.0.0.1:8000
    ```
 
-3. Open your browser and navigate to:
+4. Open your browser and navigate to:
    ```
    http://127.0.0.1:8000/index.php
    ```
-
----
-
-## 🛠️ Built With
-
-- **HTML5** & **CSS3** (Custom Properties, Warm Beige Theme)
-- **JavaScript (ES6+)** (Native `Map` & `Array` DOM filtering, modal overlays)
-- **PHP 8.x** & **PDO SQLite**
-- **FontAwesome 6** Icons
 
 ---
 

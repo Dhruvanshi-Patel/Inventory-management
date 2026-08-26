@@ -1,133 +1,121 @@
 <?php
 /**
- * Inventory Management System
- * Full-Stack Controller & View (Pure PHP + SQL + HTML + CSS + JS, No JSON, No CSV Export)
+ * Simple Procedural Inventory Management System
+ * Plain PHP + PDO MySQL/SQLite + HTML5 + CSS + Vanilla JS (No JSON)
  */
 
-require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/database.php';
 
-// Auto-initialize database
-initDatabase();
-$pdo = getDbConnection();
+init_database();
+$db = get_db_connection();
 
-// Process POST Actions (Form Submissions)
+// Process HTML Form Submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
-    switch ($action) {
-        case 'add':
-            $name = trim($_POST['name'] ?? '');
-            $category = trim($_POST['category'] ?? '');
-            $price = max(0, floatval($_POST['price'] ?? 0));
-            $stock = max(0, intval($_POST['stock'] ?? 0));
-            $sku = trim($_POST['sku'] ?? '');
-            $description = trim($_POST['description'] ?? '');
+    if ($action === 'add') {
+        $name = trim($_POST['name'] ?? '');
+        $description = trim($_POST['description'] ?? '');
+        $price = max(0, floatval($_POST['price'] ?? 0));
+        $stock_quantity = max(0, intval($_POST['stock_quantity'] ?? 0));
+        $category = trim($_POST['category'] ?? '');
 
-            if (!empty($name) && !empty($category)) {
-                if (empty($sku)) {
-                    $sku = 'SKU-' . strtoupper(substr(preg_replace('/[^a-zA-Z0-9]/', '', $category), 0, 4)) . '-' . rand(100, 999);
-                }
-                $id = 'prod-' . time() . '-' . rand(100, 999);
+        if (!empty($name) && !empty($category)) {
+            $stmt = $db->prepare("INSERT INTO products (name, description, price, stock_quantity, category) VALUES (:name, :description, :price, :stock_quantity, :category)");
+            $stmt->execute([
+                ':name' => $name,
+                ':description' => $description,
+                ':price' => $price,
+                ':stock_quantity' => $stock_quantity,
+                ':category' => $category
+            ]);
+        }
+        header('Location: index.php?msg=added');
+        exit;
+    } 
+    
+    if ($action === 'edit') {
+        $id = intval($_POST['id'] ?? 0);
+        $name = trim($_POST['name'] ?? '');
+        $description = trim($_POST['description'] ?? '');
+        $price = max(0, floatval($_POST['price'] ?? 0));
+        $stock_quantity = max(0, intval($_POST['stock_quantity'] ?? 0));
+        $category = trim($_POST['category'] ?? '');
 
-                $stmt = $pdo->prepare("INSERT INTO products (id, sku, name, description, price, stock, category, created_at, updated_at) VALUES (:id, :sku, :name, :description, :price, :stock, :category, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)");
-                $stmt->execute([
-                    ':id' => $id,
-                    ':sku' => $sku,
-                    ':name' => $name,
-                    ':description' => $description,
-                    ':price' => $price,
-                    ':stock' => $stock,
-                    ':category' => $category
-                ]);
+        if ($id > 0 && !empty($name) && !empty($category)) {
+            $stmt = $db->prepare("UPDATE products SET name = :name, description = :description, price = :price, stock_quantity = :stock_quantity, category = :category WHERE id = :id");
+            $stmt->execute([
+                ':id' => $id,
+                ':name' => $name,
+                ':description' => $description,
+                ':price' => $price,
+                ':stock_quantity' => $stock_quantity,
+                ':category' => $category
+            ]);
+        }
+        header('Location: index.php?msg=updated');
+        exit;
+    }
 
-                // Ensure category exists
-                $catStmt = $pdo->prepare("INSERT OR IGNORE INTO categories (name, slug) VALUES (:name, :slug)");
-                $catStmt->execute([':name' => $category, ':slug' => strtolower(preg_replace('/[^a-zA-Z0-9]/', '-', $category))]);
+    if ($action === 'update_stock') {
+        $id = intval($_POST['id'] ?? 0);
+        if ($id > 0) {
+            if (isset($_POST['delta'])) {
+                $delta = intval($_POST['delta']);
+                $stmt = $db->prepare("UPDATE products SET stock_quantity = MAX(0, stock_quantity + :delta) WHERE id = :id");
+                $stmt->execute([':id' => $id, ':delta' => $delta]);
+            } else if (isset($_POST['stock_quantity'])) {
+                $newStock = max(0, intval($_POST['stock_quantity']));
+                $stmt = $db->prepare("UPDATE products SET stock_quantity = :stock_quantity WHERE id = :id");
+                $stmt->execute([':id' => $id, ':stock_quantity' => $newStock]);
             }
-            header('Location: index.php?msg=added');
-            exit;
+        }
+        header('Location: index.php?msg=stock_updated');
+        exit;
+    }
 
-        case 'edit':
-            $id = trim($_POST['id'] ?? '');
-            $name = trim($_POST['name'] ?? '');
-            $category = trim($_POST['category'] ?? '');
-            $price = max(0, floatval($_POST['price'] ?? 0));
-            $stock = max(0, intval($_POST['stock'] ?? 0));
-            $sku = trim($_POST['sku'] ?? '');
-            $description = trim($_POST['description'] ?? '');
+    if ($action === 'delete') {
+        $id = intval($_POST['id'] ?? 0);
+        if ($id > 0) {
+            $stmt = $db->prepare("DELETE FROM products WHERE id = :id");
+            $stmt->execute([':id' => $id]);
+        }
+        header('Location: index.php?msg=deleted');
+        exit;
+    }
 
-            if (!empty($id) && !empty($name) && !empty($category)) {
-                $stmt = $pdo->prepare("UPDATE products SET sku = :sku, name = :name, description = :description, price = :price, stock = :stock, category = :category, updated_at = CURRENT_TIMESTAMP WHERE id = :id");
-                $stmt->execute([
-                    ':id' => $id,
-                    ':sku' => $sku,
-                    ':name' => $name,
-                    ':description' => $description,
-                    ':price' => $price,
-                    ':stock' => $stock,
-                    ':category' => $category
-                ]);
-            }
-            header('Location: index.php?msg=updated');
-            exit;
-
-        case 'update_stock':
-            $id = trim($_POST['id'] ?? '');
-            if (!empty($id)) {
-                if (isset($_POST['delta'])) {
-                    $delta = intval($_POST['delta']);
-                    $stmt = $pdo->prepare("UPDATE products SET stock = MAX(0, stock + :delta), updated_at = CURRENT_TIMESTAMP WHERE id = :id");
-                    $stmt->execute([':id' => $id, ':delta' => $delta]);
-                } else if (isset($_POST['stock'])) {
-                    $newStock = max(0, intval($_POST['stock']));
-                    $stmt = $pdo->prepare("UPDATE products SET stock = :stock, updated_at = CURRENT_TIMESTAMP WHERE id = :id");
-                    $stmt->execute([':id' => $id, ':stock' => $newStock]);
-                }
-            }
-            header('Location: index.php?msg=stock_updated');
-            exit;
-
-        case 'delete':
-            $id = trim($_POST['id'] ?? '');
-            if (!empty($id)) {
-                $stmt = $pdo->prepare("DELETE FROM products WHERE id = :id");
-                $stmt->execute([':id' => $id]);
-            }
-            header('Location: index.php?msg=deleted');
-            exit;
-
-        case 'reset':
-            initDatabase(true);
-            header('Location: index.php?msg=reset');
-            exit;
+    if ($action === 'reset') {
+        init_database(true);
+        header('Location: index.php?msg=reset');
+        exit;
     }
 }
 
-// Fetch all products from database
-$stmt = $pdo->query("SELECT * FROM products ORDER BY updated_at DESC");
+// Fetch all products from MySQL database
+$stmt = $db->query("SELECT * FROM products ORDER BY id DESC");
 $products = $stmt->fetchAll();
 
-// Fetch categories
-$catStmt = $pdo->query("SELECT DISTINCT category FROM products UNION SELECT name as category FROM categories ORDER BY category ASC");
+// Fetch distinct categories
+$catStmt = $db->query("SELECT DISTINCT category FROM products ORDER BY category ASC");
 $categories = array_filter($catStmt->fetchAll(PDO::FETCH_COLUMN));
 
-// Calculate Summary Metrics
+// Calculate Summary Statistics
 $totalProducts = count($products);
 $totalValue = 0;
 $lowStockCount = 0;
 $outOfStockCount = 0;
 
 foreach ($products as $p) {
-    $totalValue += ($p['price'] * $p['stock']);
-    if ($p['stock'] == 0) {
+    $totalValue += ($p['price'] * $p['stock_quantity']);
+    if ($p['stock_quantity'] == 0) {
         $outOfStockCount++;
-    } else if ($p['stock'] <= 5) {
+    } else if ($p['stock_quantity'] <= 5) {
         $lowStockCount++;
     }
 }
 
-// Flash Notification Messages
+// Status Flash Messages
 $toastMsg = '';
 $toastType = 'info';
 if (isset($_GET['msg'])) {
@@ -136,7 +124,7 @@ if (isset($_GET['msg'])) {
         case 'updated': $toastMsg = 'Product updated successfully!'; $toastType = 'success'; break;
         case 'stock_updated': $toastMsg = 'Stock level updated!'; $toastType = 'success'; break;
         case 'deleted': $toastMsg = 'Product deleted from inventory.'; $toastType = 'warning'; break;
-        case 'reset': $toastMsg = 'Inventory reset to default sample data.'; $toastType = 'info'; break;
+        case 'reset': $toastMsg = 'Database reset to initial sample items.'; $toastType = 'info'; break;
     }
 }
 ?>
@@ -145,8 +133,8 @@ if (isset($_GET['msg'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inventory Management System | Stock Control & Product Tracking</title>
-    <meta name="description" content="Simple Inventory Management System built with PHP, SQL, HTML, CSS and JavaScript.">
+    <title>Simple Inventory Management System | PHP & MySQL</title>
+    <meta name="description" content="Simple beginner-friendly Inventory Management System built with PHP, MySQL, HTML, CSS and JavaScript.">
     
     <!-- CSS & FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -163,15 +151,15 @@ if (isset($_GET['msg'])) {
                 </div>
                 <div class="brand-text">
                     <h1>Inventory Manager</h1>
-                    <p>Basic Stock & Product Management</p>
+                    <p>Basic Stock & Product Tracking (PHP & MySQL)</p>
                 </div>
             </div>
 
             <div class="header-actions">
-                <form method="POST" action="index.php" style="display: inline;" onsubmit="return confirm('Reset inventory to initial sample products?');">
+                <form method="POST" action="index.php" style="display: inline;" onsubmit="return confirm('Reset database to initial sample items?');">
                     <input type="hidden" name="action" value="reset">
                     <button type="submit" class="btn btn-secondary" title="Reset Demo Data">
-                        <i class="fa-solid fa-rotate-left"></i> Reset
+                        <i class="fa-solid fa-rotate-left"></i> Reset Data
                     </button>
                 </form>
                 <button type="button" class="btn btn-primary" id="btnAddProduct">
@@ -181,7 +169,7 @@ if (isset($_GET['msg'])) {
         </div>
     </header>
 
-    <!-- Main Content Area -->
+    <!-- Main Content Container -->
     <main class="main-container">
 
         <!-- Top Dashboard Summary Metric Cards -->
@@ -189,7 +177,7 @@ if (isset($_GET['msg'])) {
             <div class="stat-card" data-filter-target="all" title="Click to view all products">
                 <div class="stat-info">
                     <h3>Total Products</h3>
-                    <div class="stat-value" id="totalProductsVal"><?= $totalProducts ?></div>
+                    <div class="stat-value"><?= $totalProducts ?></div>
                     <div class="stat-subtext">Cataloged items</div>
                 </div>
                 <div class="stat-icon-wrapper">
@@ -200,7 +188,7 @@ if (isset($_GET['msg'])) {
             <div class="stat-card" data-filter-target="all">
                 <div class="stat-info">
                     <h3>Total Value</h3>
-                    <div class="stat-value" id="totalValueVal">₹<?= number_format($totalValue, 2) ?></div>
+                    <div class="stat-value">₹<?= number_format($totalValue, 2) ?></div>
                     <div class="stat-subtext">Total inventory worth</div>
                 </div>
                 <div class="stat-icon-wrapper">
@@ -211,7 +199,7 @@ if (isset($_GET['msg'])) {
             <div class="stat-card" data-filter-target="lowstock" title="Click to filter Low Stock">
                 <div class="stat-info">
                     <h3>Low Stock</h3>
-                    <div class="stat-value" id="lowStockVal"><?= $lowStockCount ?></div>
+                    <div class="stat-value"><?= $lowStockCount ?></div>
                     <div class="stat-subtext">&le; 5 units remaining</div>
                 </div>
                 <div class="stat-icon-wrapper">
@@ -222,7 +210,7 @@ if (isset($_GET['msg'])) {
             <div class="stat-card" data-filter-target="outofstock" title="Click to filter Out of Stock">
                 <div class="stat-info">
                     <h3>Out of Stock</h3>
-                    <div class="stat-value" id="outOfStockVal"><?= $outOfStockCount ?></div>
+                    <div class="stat-value"><?= $outOfStockCount ?></div>
                     <div class="stat-subtext">0 units remaining</div>
                 </div>
                 <div class="stat-icon-wrapper">
@@ -235,7 +223,7 @@ if (isset($_GET['msg'])) {
         <section class="toolbar-panel">
             <div class="search-box">
                 <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" id="searchInput" class="search-input" placeholder="Search by name, SKU, or category...">
+                <input type="text" id="searchInput" class="search-input" placeholder="Search products by name, category, or description...">
             </div>
 
             <div class="filter-group">
@@ -264,7 +252,7 @@ if (isset($_GET['msg'])) {
             </div>
         </section>
 
-        <!-- Main Product Inventory Panel -->
+        <!-- Products Display Panel -->
         <section class="inventory-panel">
             
             <!-- Table View -->
@@ -272,7 +260,7 @@ if (isset($_GET['msg'])) {
                 <table class="product-table">
                     <thead>
                         <tr>
-                            <th>Product Name & SKU</th>
+                            <th>Product Name</th>
                             <th>Category</th>
                             <th>Price (₹)</th>
                             <th>Stock Quantity</th>
@@ -282,21 +270,19 @@ if (isset($_GET['msg'])) {
                     </thead>
                     <tbody id="productTableBody">
                         <?php foreach ($products as $p): 
-                            $stock = intval($p['stock']);
+                            $stock = intval($p['stock_quantity']);
                             $statusClass = $stock == 0 ? 'badge-outofstock' : ($stock <= 5 ? 'badge-lowstock' : 'badge-instock');
                             $statusText = $stock == 0 ? 'Out of Stock' : ($stock <= 5 ? 'Low Stock' : 'In Stock');
                             $statusKey = $stock == 0 ? 'outofstock' : ($stock <= 5 ? 'lowstock' : 'instock');
                         ?>
-                            <tr data-id="<?= htmlspecialchars($p['id']) ?>" 
+                            <tr data-id="<?= $p['id'] ?>" 
                                 data-name="<?= htmlspecialchars(strtolower($p['name'])) ?>"
-                                data-sku="<?= htmlspecialchars(strtolower($p['sku'])) ?>"
                                 data-category="<?= htmlspecialchars($p['category']) ?>"
                                 data-description="<?= htmlspecialchars(strtolower($p['description'])) ?>"
                                 data-status="<?= $statusKey ?>">
                                 <td>
                                     <div class="product-name-cell">
                                         <span class="product-title"><?= htmlspecialchars($p['name']) ?></span>
-                                        <span class="product-sku"><?= htmlspecialchars($p['sku']) ?></span>
                                     </div>
                                 </td>
                                 <td><span class="card-category"><?= htmlspecialchars($p['category']) ?></span></td>
@@ -305,7 +291,7 @@ if (isset($_GET['msg'])) {
                                     <div class="stock-adjuster">
                                         <form method="POST" action="index.php" style="display: inline;">
                                             <input type="hidden" name="action" value="update_stock">
-                                            <input type="hidden" name="id" value="<?= htmlspecialchars($p['id']) ?>">
+                                            <input type="hidden" name="id" value="<?= $p['id'] ?>">
                                             <input type="hidden" name="delta" value="-1">
                                             <button type="submit" class="btn btn-secondary btn-icon-only btn-sm"><i class="fa-solid fa-minus"></i></button>
                                         </form>
@@ -314,7 +300,7 @@ if (isset($_GET['msg'])) {
                                         
                                         <form method="POST" action="index.php" style="display: inline;">
                                             <input type="hidden" name="action" value="update_stock">
-                                            <input type="hidden" name="id" value="<?= htmlspecialchars($p['id']) ?>">
+                                            <input type="hidden" name="id" value="<?= $p['id'] ?>">
                                             <input type="hidden" name="delta" value="1">
                                             <button type="submit" class="btn btn-secondary btn-icon-only btn-sm"><i class="fa-solid fa-plus"></i></button>
                                         </form>
@@ -325,18 +311,17 @@ if (isset($_GET['msg'])) {
                                 </td>
                                 <td class="actions-cell">
                                     <button type="button" class="btn btn-secondary btn-icon-only btn-edit" 
-                                            data-id="<?= htmlspecialchars($p['id']) ?>"
+                                            data-id="<?= $p['id'] ?>"
                                             data-name="<?= htmlspecialchars($p['name']) ?>"
-                                            data-sku="<?= htmlspecialchars($p['sku']) ?>"
                                             data-category="<?= htmlspecialchars($p['category']) ?>"
                                             data-price="<?= $p['price'] ?>"
-                                            data-stock="<?= $p['stock'] ?>"
+                                            data-stock_quantity="<?= $p['stock_quantity'] ?>"
                                             data-description="<?= htmlspecialchars($p['description']) ?>"
                                             title="Edit">
                                         <i class="fa-solid fa-pen"></i>
                                     </button>
                                     <button type="button" class="btn btn-danger btn-icon-only btn-delete" 
-                                            data-id="<?= htmlspecialchars($p['id']) ?>"
+                                            data-id="<?= $p['id'] ?>"
                                             data-name="<?= htmlspecialchars($p['name']) ?>"
                                             title="Delete">
                                         <i class="fa-solid fa-trash"></i>
@@ -351,15 +336,14 @@ if (isset($_GET['msg'])) {
             <!-- Grid View -->
             <div id="gridViewContainer" class="product-grid" style="display: none;">
                 <?php foreach ($products as $p): 
-                    $stock = intval($p['stock']);
+                    $stock = intval($p['stock_quantity']);
                     $statusClass = $stock == 0 ? 'badge-outofstock' : ($stock <= 5 ? 'badge-lowstock' : 'badge-instock');
                     $statusText = $stock == 0 ? 'Out of Stock' : ($stock <= 5 ? 'Low Stock' : 'In Stock');
                     $statusKey = $stock == 0 ? 'outofstock' : ($stock <= 5 ? 'lowstock' : 'instock');
                 ?>
                     <div class="product-card"
-                         data-id="<?= htmlspecialchars($p['id']) ?>" 
+                         data-id="<?= $p['id'] ?>" 
                          data-name="<?= htmlspecialchars(strtolower($p['name'])) ?>"
-                         data-sku="<?= htmlspecialchars(strtolower($p['sku'])) ?>"
                          data-category="<?= htmlspecialchars($p['category']) ?>"
                          data-description="<?= htmlspecialchars(strtolower($p['description'])) ?>"
                          data-status="<?= $statusKey ?>">
@@ -369,7 +353,6 @@ if (isset($_GET['msg'])) {
                                 <span class="badge <?= $statusClass ?>"><?= $statusText ?></span>
                             </div>
                             <h3 class="card-title"><?= htmlspecialchars($p['name']) ?></h3>
-                            <p class="product-sku" style="margin-bottom: 6px;"><?= htmlspecialchars($p['sku']) ?></p>
                             <p class="card-desc"><?= htmlspecialchars($p['description'] ?: 'No description.') ?></p>
                         </div>
                         <div>
@@ -378,7 +361,7 @@ if (isset($_GET['msg'])) {
                                 <div class="stock-adjuster">
                                     <form method="POST" action="index.php" style="display: inline;">
                                         <input type="hidden" name="action" value="update_stock">
-                                        <input type="hidden" name="id" value="<?= htmlspecialchars($p['id']) ?>">
+                                        <input type="hidden" name="id" value="<?= $p['id'] ?>">
                                         <input type="hidden" name="delta" value="-1">
                                         <button type="submit" class="btn btn-secondary btn-icon-only btn-sm"><i class="fa-solid fa-minus"></i></button>
                                     </form>
@@ -387,7 +370,7 @@ if (isset($_GET['msg'])) {
                                     
                                     <form method="POST" action="index.php" style="display: inline;">
                                         <input type="hidden" name="action" value="update_stock">
-                                        <input type="hidden" name="id" value="<?= htmlspecialchars($p['id']) ?>">
+                                        <input type="hidden" name="id" value="<?= $p['id'] ?>">
                                         <input type="hidden" name="delta" value="1">
                                         <button type="submit" class="btn btn-secondary btn-icon-only btn-sm"><i class="fa-solid fa-plus"></i></button>
                                     </form>
@@ -395,17 +378,16 @@ if (isset($_GET['msg'])) {
                             </div>
                             <div class="card-footer">
                                 <button type="button" class="btn btn-secondary btn-sm btn-edit" 
-                                        data-id="<?= htmlspecialchars($p['id']) ?>"
+                                        data-id="<?= $p['id'] ?>"
                                         data-name="<?= htmlspecialchars($p['name']) ?>"
-                                        data-sku="<?= htmlspecialchars($p['sku']) ?>"
                                         data-category="<?= htmlspecialchars($p['category']) ?>"
                                         data-price="<?= $p['price'] ?>"
-                                        data-stock="<?= $p['stock'] ?>"
+                                        data-stock_quantity="<?= $p['stock_quantity'] ?>"
                                         data-description="<?= htmlspecialchars($p['description']) ?>">
                                     <i class="fa-solid fa-pen"></i> Edit
                                 </button>
                                 <button type="button" class="btn btn-danger btn-sm btn-delete" 
-                                        data-id="<?= htmlspecialchars($p['id']) ?>"
+                                        data-id="<?= $p['id'] ?>"
                                         data-name="<?= htmlspecialchars($p['name']) ?>">
                                     <i class="fa-solid fa-trash"></i> Delete
                                 </button>
@@ -445,15 +427,12 @@ if (isset($_GET['msg'])) {
                     <div class="form-group">
                         <label for="modalCategorySelect">Category *</label>
                         <select name="category" id="modalCategorySelect" class="form-control" required>
-                            <?php foreach ($categories as $cat): ?>
-                                <option value="<?= htmlspecialchars($cat) ?>"><?= htmlspecialchars($cat) ?></option>
-                            <?php endforeach; ?>
+                            <option value="Electronics">Electronics</option>
+                            <option value="Apparel">Apparel</option>
+                            <option value="Home & Kitchen">Home & Kitchen</option>
+                            <option value="Books">Books</option>
+                            <option value="Groceries">Groceries</option>
                         </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="modalSku">SKU / Item Code</label>
-                        <input type="text" name="sku" id="modalSku" class="form-control" placeholder="Auto-generated if empty">
                     </div>
 
                     <div class="form-group">
@@ -462,8 +441,8 @@ if (isset($_GET['msg'])) {
                     </div>
 
                     <div class="form-group">
-                        <label for="modalStock">Stock Quantity *</label>
-                        <input type="number" min="0" name="stock" id="modalStock" class="form-control" required placeholder="0">
+                        <label for="modalStockQuantity">Stock Quantity *</label>
+                        <input type="number" min="0" name="stock_quantity" id="modalStockQuantity" class="form-control" required placeholder="0">
                     </div>
 
                     <div class="form-group full-width">

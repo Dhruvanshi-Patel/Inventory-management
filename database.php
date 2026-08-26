@@ -1,42 +1,38 @@
 <?php
 /**
- * Database Auto-Initializer & Seeder
+ * Database Auto-Initializer
  * Inventory Management System
  */
 
-require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/db.php';
 
-function initDatabase($forceReset = false) {
-    $dbFileExists = file_exists(SQLITE_FILE);
+function init_database($forceReset = false) {
+    $pdo = get_db_connection();
     
-    if (!$dbFileExists || $forceReset) {
-        $pdo = getDbConnection();
-        $schemaSql = file_get_contents(__DIR__ . '/schema.sql');
-        
-        if ($schemaSql) {
-            $pdo->exec($schemaSql);
-            return [
-                'status' => 'success',
-                'message' => 'Database initialized and seeded successfully.'
-            ];
-        } else {
-            return [
-                'status' => 'error',
-                'message' => 'schema.sql file not found or empty.'
-            ];
+    // Check if products table exists
+    $tableExists = false;
+    try {
+        $check = $pdo->query("SELECT 1 FROM products LIMIT 1");
+        if ($check !== false) {
+            $tableExists = true;
+        }
+    } catch (Exception $e) {
+        $tableExists = false;
+    }
+
+    if (!$tableExists || $forceReset) {
+        $schema = file_get_contents(__DIR__ . '/schema.sql');
+        if ($schema) {
+            // For SQLite, convert AUTO_INCREMENT and TIMESTAMP ON UPDATE syntax
+            $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+            if ($driver === 'sqlite') {
+                $schema = str_replace('INT AUTO_INCREMENT PRIMARY KEY', 'INTEGER PRIMARY KEY AUTOINCREMENT', $schema);
+                $schema = str_replace('ON UPDATE CURRENT_TIMESTAMP', '', $schema);
+                $schema = str_replace('INSERT INTO products', 'INSERT OR IGNORE INTO products', $schema);
+            }
+            $pdo->exec($schema);
         }
     }
-    
-    return [
-        'status' => 'info',
-        'message' => 'Database already exists.'
-    ];
 }
 
-initDatabase();
-
-if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === 'database.php') {
-    header('Content-Type: application/json');
-    $reset = isset($_GET['reset']) && $_GET['reset'] === '1';
-    echo json_encode(initDatabase($reset));
-}
+init_database();
